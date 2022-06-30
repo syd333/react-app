@@ -1,4 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
+//custom hooks 
+const useStorageState = (key, initialState) => {
+  const [value, setValue] = React.useState(
+    localStorage.getItem(key) || initialState
+  );
+
+  React.useEffect(() => {
+    localStorage.setItem(key, value);
+  }, [value, key]);
+
+  return [value, setValue];
+};
 
 const App = () => {
   const stories = [
@@ -19,8 +32,7 @@ const App = () => {
       objectID: 1,
     },
   ];
-
-  const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useStorageState("search", "React");
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -65,7 +77,9 @@ const List = ({ list }) => (
   </ul>
 );
 
-const Item = ({ item: { objectID, title, url, author, num_comments, points } }) => (
+const Item = ({
+  item: { objectID, title, url, author, num_comments, points },
+}) => (
   // { title, url, author, num_comments, points }
   <li key={objectID}>
     <span>
