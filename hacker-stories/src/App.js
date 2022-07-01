@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
-//custom hooks 
+//custom hooks
 const useStorageState = (key, initialState) => {
   const [value, setValue] = React.useState(
     localStorage.getItem(key) || initialState
@@ -32,7 +32,7 @@ const App = () => {
       objectID: 1,
     },
   ];
-    const [searchTerm, setSearchTerm] = useStorageState("search", "React");
+  const [searchTerm, setSearchTerm] = useStorageState("search", "React");
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -45,7 +45,14 @@ const App = () => {
   return (
     <div>
       <h1> Hacker Stories</h1>
-      <Search search={searchTerm} onSearch={handleSearch} />
+      <InputWithLabel
+        id="search"
+        value={searchTerm}
+        isFocused
+        onInputChange={handleSearch}
+      >
+        <strong>Search:</strong>
+      </InputWithLabel>
       <hr />
 
       <List list={searchedStories} />
@@ -53,12 +60,37 @@ const App = () => {
   );
 };
 
-const Search = ({ search, onSearch }) => (
-  <div>
-    <label htmlFor="search">Search: </label>
-    <input id="search" value={search} type="text" onChange={onSearch} />
-  </div>
-);
+const InputWithLabel = ({
+  id,
+  label,
+  value,
+  type = "text",
+  onInputChange,
+  isFocused,
+  children,
+}) => {
+  const inputRef = useRef();
+
+  useEffect(() => {
+    if (isFocused && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isFocused]);
+  return (
+    <>
+      <label htmlFor={id}>{children}</label>
+      &nbsp;
+      <input
+        id={id}
+        ref={inputRef}
+        autoFocus={isFocused}
+        type={type}
+        value={value}
+        onChange={onInputChange}
+      />
+    </>
+  );
+};
 
 const List = ({ list }) => (
   <ul>
