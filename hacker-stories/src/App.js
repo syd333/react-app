@@ -6,6 +6,7 @@ import React, {
   useCallback,
 } from "react";
 import axios from "axios";
+import "./App.css";
 
 // const initialStories = [
 //   {
@@ -131,7 +132,7 @@ const App = () => {
 
   const handleSearchSubmit = (e) => {
     setUrl(`${API_ENDPOINT}${searchTerm}`);
-    e.preventDefault()
+    e.preventDefault();
   };
 
   const searchedStories = stories.data.filter((story) =>
@@ -139,15 +140,15 @@ const App = () => {
   );
 
   return (
-    <div>
-      <h1> Hacker Stories</h1>
-      <SearchForm 
-      searchTerm={searchTerm}
-      onSearchInput={handleSearchInput}
-      onSearchSubmit={handleSearchSubmit}
+    <div className="container">
+      <h1 className="headline-primary"> Hacker Stories</h1>
+      <SearchForm
+        searchTerm={searchTerm}
+        onSearchInput={handleSearchInput}
+        onSearchSubmit={handleSearchSubmit}
       />
-       {/* moved to separate component */}
-       {/* <form onSubmit={handleSearchSubmit}>
+      {/* moved to separate component */}
+      {/* <form onSubmit={handleSearchSubmit}>
         <InputWithLabel
           id="search"
           value={searchTerm}
@@ -173,7 +174,7 @@ const App = () => {
 };
 
 const SearchForm = ({ searchTerm, onSearchInput, onSearchSubmit }) => (
-  <form onSubmit={onSearchSubmit}>
+  <form onSubmit={onSearchSubmit} className="search-form">
     <InputWithLabel
       id="search"
       value={searchTerm}
@@ -183,7 +184,11 @@ const SearchForm = ({ searchTerm, onSearchInput, onSearchSubmit }) => (
       <strong>Search:</strong>
     </InputWithLabel>
 
-    <button type="submit" disabled={!searchTerm}>
+    <button
+      type="submit"
+      disabled={!searchTerm}
+      className="button button_large"
+    >
       Submit
     </button>
   </form>
@@ -207,7 +212,9 @@ const InputWithLabel = ({
   }, [isFocused]);
   return (
     <>
-      <label htmlFor={id}>{children}</label>
+      <label htmlFor={id} className="label">
+        {children}
+      </label>
       &nbsp;
       <input
         id={id}
@@ -216,6 +223,7 @@ const InputWithLabel = ({
         type={type}
         value={value}
         onChange={onInputChange}
+        className="input"
       />
     </>
   );
@@ -246,15 +254,19 @@ const Item = ({ item, onRemoveItem }) => {
   //   onRemoveItem(item);
   // };
   return (
-    <li key={item.objectID}>
-      <span>
+    <li className="item" key={item.objectID}>
+      <span style={{ width: "40%" }}>
         <a href={item.url}>{item.title}</a>
       </span>
-      <span>{item.author}</span>
-      <span>{item.num_comments}</span>
-      <span>{item.points}</span>
-      <span>
-        <button type="button" onClick={() => onRemoveItem(item)}>
+      <span style={{ width: "30%" }}>{item.author}</span>
+      <span style={{ width: "10%" }}>{item.num_comments}</span>
+      <span style={{ width: "10%" }}>{item.points}</span>
+      <span style={{ width: "10%" }}>
+        <button
+          type="button"
+          className="button button_small"
+          onClick={() => onRemoveItem(item)}
+        >
           Dismiss
         </button>
       </span>
