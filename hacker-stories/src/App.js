@@ -1,28 +1,30 @@
 import React, { useState, useEffect, useRef, useReducer } from "react";
 
-  const initialStories = [
-    {
-      title: "React",
-      url: "https://reactjs.org/",
-      author: "Jordan Walke",
-      num_comments: 3,
-      points: 4,
-      objectID: 0,
-    },
-    {
-      title: "Redux",
-      url: "https://redux.js.org/",
-      author: "Dan Abramov, Andrew Clark",
-      num_comments: 2,
-      points: 5,
-      objectID: 1,
-    },
-  ];
+  // const initialStories = [
+  //   {
+  //     title: "React",
+  //     url: "https://reactjs.org/",
+  //     author: "Jordan Walke",
+  //     num_comments: 3,
+  //     points: 4,
+  //     objectID: 0,
+  //   },
+  //   {
+  //     title: "Redux",
+  //     url: "https://redux.js.org/",
+  //     author: "Dan Abramov, Andrew Clark",
+  //     num_comments: 2,
+  //     points: 5,
+  //     objectID: 1,
+  //   },
+  // ];
 
-const getAsyncStories = () =>
-  new Promise((resolve) =>
-    setTimeout(() => resolve({ data: { stories: initialStories } }), 2000)
-  );
+ const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query='
+
+// const getAsyncStories = () =>
+//   new Promise((resolve) =>
+//     setTimeout(() => resolve({ data: { stories: initialStories } }), 2000)
+//   );
 
 //custom hooks
 const useStorageState = (key, initialState) => {
@@ -30,7 +32,7 @@ const useStorageState = (key, initialState) => {
     localStorage.getItem(key) || initialState
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem(key, value);
   }, [value, key]);
 
@@ -87,19 +89,23 @@ const App = () => {
 
 
   useEffect(() => {
+    if (!searchTerm) return;
     dispatchStories({ type: "STORIES_FETCH_INIT" });
-    getAsyncStories()
-      .then((result) => {
+    // getAsyncStories()
+    fetch(`${API_ENDPOINT}${searchTerm}`)
+      .then((res) => res.json())
+      .then((result) => { 
         // setStories(result.data.stories);
         // setIsLoading(false);
         dispatchStories({
           type: "STORIES_FETCH_SUCCESS",
-          payload: result.data.stories,
+          payload: result.hits,
         });
         // setIsLoading(false);
       })
-      .catch(() => dispatchStories({ type: "STORIES_FETCH_FAILURE" }));
-  }, []);
+      .catch(() => dispatchStories({ type: "STORIES_FETCH_FAILURE" })
+      )
+  }, [searchTerm]);
 
 
 
@@ -138,7 +144,7 @@ const App = () => {
       {stories.isLoading ? (
         <p>Loading...</p>
       ) : (
-        <List list={searchedStories} onRemoveItem={handleRemoveStory} />
+        <List list={stories.data} onRemoveItem={handleRemoveStory} />
       )}
     </div>
   );
