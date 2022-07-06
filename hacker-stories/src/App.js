@@ -1,26 +1,32 @@
-import React, { useState, useEffect, useRef, useReducer, useCallback } from "react";
-import axios from 'axios'
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useReducer,
+  useCallback,
+} from "react";
+import axios from "axios";
 
-  // const initialStories = [
-  //   {
-  //     title: "React",
-  //     url: "https://reactjs.org/",
-  //     author: "Jordan Walke",
-  //     num_comments: 3,
-  //     points: 4,
-  //     objectID: 0,
-  //   },
-  //   {
-  //     title: "Redux",
-  //     url: "https://redux.js.org/",
-  //     author: "Dan Abramov, Andrew Clark",
-  //     num_comments: 2,
-  //     points: 5,
-  //     objectID: 1,
-  //   },
-  // ];
+// const initialStories = [
+//   {
+//     title: "React",
+//     url: "https://reactjs.org/",
+//     author: "Jordan Walke",
+//     num_comments: 3,
+//     points: 4,
+//     objectID: 0,
+//   },
+//   {
+//     title: "Redux",
+//     url: "https://redux.js.org/",
+//     author: "Dan Abramov, Andrew Clark",
+//     num_comments: 2,
+//     points: 5,
+//     objectID: 1,
+//   },
+// ];
 
- const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query='
+const API_ENDPOINT = "https://hn.algolia.com/api/v1/search?query=";
 
 // const getAsyncStories = () =>
 //   new Promise((resolve) =>
@@ -29,9 +35,7 @@ import axios from 'axios'
 
 //custom hooks
 const useStorageState = (key, initialState) => {
-  const [value, setValue] = useState(
-    localStorage.getItem(key) || initialState
-  );
+  const [value, setValue] = useState(localStorage.getItem(key) || initialState);
 
   useEffect(() => {
     localStorage.setItem(key, value);
@@ -73,9 +77,8 @@ const storiesReducer = (state, action) => {
   }
 };
 const App = () => {
-
   const [searchTerm, setSearchTerm] = useStorageState("search", "React");
-  const [url, setUrl] = useState(`${API_ENDPOINT}${searchTerm}`)
+  const [url, setUrl] = useState(`${API_ENDPOINT}${searchTerm}`);
 
   // const [stories, setStories] = useState(initialStories);
 
@@ -85,35 +88,31 @@ const App = () => {
     isError: false,
   });
 
-
   // const [isLoading, setIsLoading] = useState(false);
   // const [isError, setIsError] = useState(false);
 
-
-const handleFetchStories = useCallback( async () => {
-  // useEffect(() => {
+  const handleFetchStories = useCallback(async () => {
+    // useEffect(() => {
     // if (!searchTerm) return;
     dispatchStories({ type: "STORIES_FETCH_INIT" });
     // getAsyncStories()
     try {
-   const result = await axios.get(url)
-        // setStories(result.data.stories);
-        // setIsLoading(false);
-        dispatchStories({
-          type: "STORIES_FETCH_SUCCESS",
-          payload: result.data.hits,
-        });
-        // setIsLoading(false);
-     } catch {
-      dispatchStories({ type: "STORIES_FETCH_FAILURE" })
+      const result = await axios.get(url);
+      // setStories(result.data.stories);
+      // setIsLoading(false);
+      dispatchStories({
+        type: "STORIES_FETCH_SUCCESS",
+        payload: result.data.hits,
+      });
+      // setIsLoading(false);
+    } catch {
+      dispatchStories({ type: "STORIES_FETCH_FAILURE" });
     }
   }, [url]);
 
-
   useEffect(() => {
-    handleFetchStories()
-  }, [handleFetchStories])
-
+    handleFetchStories();
+  }, [handleFetchStories]);
 
   const handleRemoveStory = (item) => {
     // const newStories = stories.filter(
@@ -130,9 +129,10 @@ const handleFetchStories = useCallback( async () => {
     setSearchTerm(e.target.value);
   };
 
-  const handleSearchSubmit =() => {
+  const handleSearchSubmit = (e) => {
     setUrl(`${API_ENDPOINT}${searchTerm}`);
-  }
+    e.preventDefault()
+  };
 
   const searchedStories = stories.data.filter((story) =>
     story.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -141,19 +141,27 @@ const handleFetchStories = useCallback( async () => {
   return (
     <div>
       <h1> Hacker Stories</h1>
-      <InputWithLabel
-        id="search"
-        value={searchTerm}
-        isFocused
-        onInputChange={handleSearchInput}
-      >
-        <strong>Search:</strong>
-      </InputWithLabel>
-      <button
-      type="button"
-      disabled={!searchTerm}
-      onClick={handleSearchSubmit}>
-        </button>
+      <SearchForm 
+      searchTerm={searchTerm}
+      onSearchInput={handleSearchInput}
+      onSearchSubmit={handleSearchSubmit}
+      />
+       {/* moved to separate component */}
+       {/* <form onSubmit={handleSearchSubmit}>
+        <InputWithLabel
+          id="search"
+          value={searchTerm}
+          isFocused
+          onInputChange={handleSearchInput}
+        >
+          <strong>Search:</strong>
+        </InputWithLabel>
+
+        <button type="submit" disabled={!searchTerm}>
+          Submit
+        </button> 
+      </form> */}
+      <hr />
       {stories.isError && <p> Something went wrong ... </p>}
       {stories.isLoading ? (
         <p>Loading...</p>
@@ -163,6 +171,23 @@ const handleFetchStories = useCallback( async () => {
     </div>
   );
 };
+
+const SearchForm = ({ searchTerm, onSearchInput, onSearchSubmit }) => (
+  <form onSubmit={onSearchSubmit}>
+    <InputWithLabel
+      id="search"
+      value={searchTerm}
+      isFocused
+      onInputChange={onSearchInput}
+    >
+      <strong>Search:</strong>
+    </InputWithLabel>
+
+    <button type="submit" disabled={!searchTerm}>
+      Submit
+    </button>
+  </form>
+);
 
 const InputWithLabel = ({
   id,
