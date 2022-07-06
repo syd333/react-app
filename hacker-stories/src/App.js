@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useReducer } from "react";
+import React, { useState, useEffect, useRef, useReducer, useCallback } from "react";
 
   // const initialStories = [
   //   {
@@ -87,8 +87,8 @@ const App = () => {
   // const [isError, setIsError] = useState(false);
 
 
-
-  useEffect(() => {
+const handleFetchStories = useCallback(() => {
+  // useEffect(() => {
     if (!searchTerm) return;
     dispatchStories({ type: "STORIES_FETCH_INIT" });
     // getAsyncStories()
@@ -107,6 +107,10 @@ const App = () => {
       )
   }, [searchTerm]);
 
+
+  useEffect(() => {
+    handleFetchStories()
+  }, [handleFetchStories])
 
 
   const handleRemoveStory = (item) => {
