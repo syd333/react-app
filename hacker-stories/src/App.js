@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useReducer, useCallback } from "react";
+import axios from 'axios'
 
   // const initialStories = [
   //   {
@@ -74,6 +75,8 @@ const storiesReducer = (state, action) => {
 const App = () => {
 
   const [searchTerm, setSearchTerm] = useStorageState("search", "React");
+  const [url, setUrl] = useState(`${API_ENDPOINT}${searchTerm}`)
+
   // const [stories, setStories] = useState(initialStories);
 
   const [stories, dispatchStories] = useReducer(storiesReducer, {
@@ -87,25 +90,24 @@ const App = () => {
   // const [isError, setIsError] = useState(false);
 
 
-const handleFetchStories = useCallback(() => {
+const handleFetchStories = useCallback( async () => {
   // useEffect(() => {
-    if (!searchTerm) return;
+    // if (!searchTerm) return;
     dispatchStories({ type: "STORIES_FETCH_INIT" });
     // getAsyncStories()
-    fetch(`${API_ENDPOINT}${searchTerm}`)
-      .then((res) => res.json())
-      .then((result) => { 
+    try {
+   const result = await axios.get(url)
         // setStories(result.data.stories);
         // setIsLoading(false);
         dispatchStories({
           type: "STORIES_FETCH_SUCCESS",
-          payload: result.hits,
+          payload: result.data.hits,
         });
         // setIsLoading(false);
-      })
-      .catch(() => dispatchStories({ type: "STORIES_FETCH_FAILURE" })
-      )
-  }, [searchTerm]);
+     } catch {
+      dispatchStories({ type: "STORIES_FETCH_FAILURE" })
+    }
+  }, [url]);
 
 
   useEffect(() => {
@@ -124,9 +126,13 @@ const handleFetchStories = useCallback(() => {
     });
   };
 
-  const handleSearch = (e) => {
+  const handleSearchInput = (e) => {
     setSearchTerm(e.target.value);
   };
+
+  const handleSearchSubmit =() => {
+    setUrl(`${API_ENDPOINT}${searchTerm}`);
+  }
 
   const searchedStories = stories.data.filter((story) =>
     story.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -139,11 +145,15 @@ const handleFetchStories = useCallback(() => {
         id="search"
         value={searchTerm}
         isFocused
-        onInputChange={handleSearch}
+        onInputChange={handleSearchInput}
       >
         <strong>Search:</strong>
       </InputWithLabel>
-      <hr />
+      <button
+      type="button"
+      disabled={!searchTerm}
+      onClick={handleSearchSubmit}>
+        </button>
       {stories.isError && <p> Something went wrong ... </p>}
       {stories.isLoading ? (
         <p>Loading...</p>
