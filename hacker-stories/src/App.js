@@ -54,12 +54,18 @@ const API_ENDPOINT = "https://hn.algolia.com/api/v1/search?query=";
 
 //custom hooks
 const useStorageState = (key, initialState) => {
+  const isMounted = useRef(false);
+
   const [value, setValue] = useState(localStorage.getItem(key) || initialState);
 
   useEffect(() => {
-    localStorage.setItem(key, value);
+    if (!isMounted.current) {
+      isMounted.current = true;
+    } else {
+      console.log("A");
+      localStorage.setItem(key, value);
+    }
   }, [value, key]);
-
   return [value, setValue];
 };
 
@@ -95,6 +101,13 @@ const storiesReducer = (state, action) => {
       throw new Error();
   }
 };
+
+const getSumComments = (stories) => {
+  console.log("C");
+
+  return stories.data.reduce((result, value) => result + value.num_comments, 0);
+};
+
 const App = () => {
   const [searchTerm, setSearchTerm] = useStorageState("search", "React");
   const [url, setUrl] = useState(`${API_ENDPOINT}${searchTerm}`);
@@ -133,7 +146,7 @@ const App = () => {
     handleFetchStories();
   }, [handleFetchStories]);
 
-  const handleRemoveStory = (item) => {
+  const handleRemoveStory = useCallback((item) => {
     // const newStories = stories.filter(
     //   (story) => item.objectID !== story.objectID
     // );
@@ -142,7 +155,7 @@ const App = () => {
       type: "REMOVE_STORY",
       payload: item,
     });
-  };
+  }, []);
 
   const handleSearchInput = (e) => {
     setSearchTerm(e.target.value);
@@ -153,13 +166,19 @@ const App = () => {
     e.preventDefault();
   };
 
-  const searchedStories = stories.data.filter((story) =>
-    story.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    console.log("B:App");
+
+    const sumComments = React.useMemo(() => getSumComments(stories), [stories]);
+
+  // const searchedStories = stories.data.filter((story) =>
+  //   story.title.toLowerCase().includes(searchTerm.toLowerCase())
+  // );
 
   return (
     <StyledContainer>
-      <StyledHeadlinePrimary>Hacker Stories</StyledHeadlinePrimary>
+      <StyledHeadlinePrimary>
+        Hacker Stories with {sumComments} comments.
+      </StyledHeadlinePrimary>
       <SearchForm
         searchTerm={searchTerm}
         onSearchInput={handleSearchInput}
@@ -247,22 +266,17 @@ const InputWithLabel = ({
   );
 };
 
-const List = ({ list, onRemoveItem }) => (
-  <ul>
-    {list.map((item) => (
-      <Item key={item.objectID} item={item} onRemoveItem={onRemoveItem} />
-      //       <Item
-      //   key={item.objectID}
-      //   title={item.title}
-      //   url={item.url}
-      //   author={item.author}
-      //   num_comments={item.num_comments}
-      //   points={item.points}
-      // />
-      // <Item key={item.objectID} {...item} />
-    ))}
-  </ul>
+const List = React.memo(
+  ({ list, onRemoveItem }) =>
+    console.log("B:List") || (
+      <ul>
+        {list.map((item) => (
+          <Item key={item.objectID} item={item} onRemoveItem={onRemoveItem} />
+        ))}
+      </ul>
+    )
 );
+
 
 const Item = ({ item, onRemoveItem }) => {
   // { title, url, author, num_comments, points } <-- props coming in culd be like this
