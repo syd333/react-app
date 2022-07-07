@@ -9,6 +9,8 @@ import axios from "axios";
 import styles from "./App.module.css";
 import styled from "styled-components";
 import { ReactComponent as Check } from "./check.svg";
+import { SearchForm } from "./SearchForm";
+import { List } from "./List";
 
 const StyledContainer = styled.div`
   height: 100vw;
@@ -246,124 +248,124 @@ const App = () => {
   );
 };
 
-type SearchFormProps = {
-  searchTerm: string;
-  onSearchInput: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onSearchSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-};
+// type SearchFormProps = {
+//   searchTerm: string;
+//   onSearchInput: (event: React.ChangeEvent<HTMLInputElement>) => void;
+//   onSearchSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+// };
 
-const SearchForm = ({
-  searchTerm,
-  onSearchInput,
-  onSearchSubmit,
-}: SearchFormProps) => (
-  <form onSubmit={onSearchSubmit} className={styles.searchForm}>
-    <InputWithLabel
-      id="search"
-      value={searchTerm}
-      isFocused
-      onInputChange={onSearchInput}
-    >
-      <strong>Search:</strong>
-    </InputWithLabel>
+// const SearchForm = ({
+//   searchTerm,
+//   onSearchInput,
+//   onSearchSubmit,
+// }: SearchFormProps) => (
+//   <form onSubmit={onSearchSubmit} className={styles.searchForm}>
+//     <InputWithLabel
+//       id="search"
+//       value={searchTerm}
+//       isFocused
+//       onInputChange={onSearchInput}
+//     >
+//       <strong>Search:</strong>
+//     </InputWithLabel>
 
-    <button
-      type="submit"
-      disabled={!searchTerm}
-      className={`${styles.button} ${styles.buttonLarge}`}
-    >
-      Submit
-    </button>
-  </form>
-);
+//     <button
+//       type="submit"
+//       disabled={!searchTerm}
+//       className={`${styles.button} ${styles.buttonLarge}`}
+//     >
+//       Submit
+//     </button>
+//   </form>
+// );
 
-type InputWithLabelProps = {
-  id: string;
-  value: string;
-  type?: string;
-  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  isFocused?: boolean;
-  children: React.ReactNode;
-};
+// type InputWithLabelProps = {
+//   id: string;
+//   value: string;
+//   type?: string;
+//   onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+//   isFocused?: boolean;
+//   children: React.ReactNode;
+// };
 
-const InputWithLabel = ({
-  id,
-  label,
-  value,
-  type = "text",
-  onInputChange,
-  isFocused,
-  children,
-}: InputWithLabelProps) => {
-  const inputRef = useRef();
+// const InputWithLabel = ({
+//   id,
+//   label,
+//   value,
+//   type = "text",
+//   onInputChange,
+//   isFocused,
+//   children,
+// }: InputWithLabelProps) => {
+//   const inputRef = useRef();
 
-  useEffect(() => {
-    if (isFocused && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isFocused]);
-  return (
-    <>
-      <label htmlFor={id} className={styles.label}>
-        {children}
-      </label>
-      &nbsp;
-      <input
-        id={id}
-        ref={inputRef}
-        autoFocus={isFocused}
-        type={type}
-        value={value}
-        onChange={onInputChange}
-        className={styles.input}
-      />
-    </>
-  );
-};
+//   useEffect(() => {
+//     if (isFocused && inputRef.current) {
+//       inputRef.current.focus();
+//     }
+//   }, [isFocused]);
+//   return (
+//     <>
+//       <label htmlFor={id} className={styles.label}>
+//         {children}
+//       </label>
+//       &nbsp;
+//       <input
+//         id={id}
+//         ref={inputRef}
+//         autoFocus={isFocused}
+//         type={type}
+//         value={value}
+//         onChange={onInputChange}
+//         className={styles.input}
+//       />
+//     </>
+//   );
+// };
 
-type ListProps = {
-  list: Stories;
-  onRemoveItem: (item: Story) => void;
-};
+// type ListProps = {
+//   list: Stories;
+//   onRemoveItem: (item: Story) => void;
+// };
 
-const List = ({ list, onRemoveItem }: ListProps) =>
-  console.log("B:List") || (
-    <ul>
-      {list.map((item) => (
-        <Item key={item.objectID} item={item} onRemoveItem={onRemoveItem} />
-      ))}
-    </ul>
-  );
+// const List = ({ list, onRemoveItem }: ListProps) =>
+//   console.log("B:List") || (
+//     <ul>
+//       {list.map((item) => (
+//         <Item key={item.objectID} item={item} onRemoveItem={onRemoveItem} />
+//       ))}
+//     </ul>
+//   );
 
-type ItemProps = {
-  item: Story;
-  onRemoveItem: (item: Story) => void;
-};
+// type ItemProps = {
+//   item: Story;
+//   onRemoveItem: (item: Story) => void;
+// };
 
-const Item = ({ item, onRemoveItem }: ItemProps) => (
-  // { title, url, author, num_comments, points } <-- props coming in culd be like this
-  // or -->  item: { objectID, title, url, author, num_comments, points }, then displayed as {url}{author} etc.
+// const Item = ({ item, onRemoveItem }: ItemProps) => (
+//   // { title, url, author, num_comments, points } <-- props coming in culd be like this
+//   // or -->  item: { objectID, title, url, author, num_comments, points }, then displayed as {url}{author} etc.
 
-  // const handleRemoveItem = () => {
-  //   onRemoveItem(item);
-  // };
-  <li className={styles.item} key={item.objectID}>
-    <span style={{ width: "40%" }}>
-      <a href={item.url}>{item.title}</a>
-    </span>
-    <span style={{ width: "30%" }}>{item.author}</span>
-    <span style={{ width: "10%" }}>{item.num_comments}</span>
-    <span style={{ width: "10%" }}>{item.points}</span>
-    <span style={{ width: "10%" }}>
-      <button
-        type="button"
-        className={`${styles.button} ${styles.buttonSmall}`}
-        onClick={() => onRemoveItem(item)}
-      >
-        <Check height="18px" width="18px" />
-      </button>
-    </span>
-  </li>
-);
+//   // const handleRemoveItem = () => {
+//   //   onRemoveItem(item);
+//   // };
+//   <li className={styles.item} key={item.objectID}>
+//     <span style={{ width: "40%" }}>
+//       <a href={item.url}>{item.title}</a>
+//     </span>
+//     <span style={{ width: "30%" }}>{item.author}</span>
+//     <span style={{ width: "10%" }}>{item.num_comments}</span>
+//     <span style={{ width: "10%" }}>{item.points}</span>
+//     <span style={{ width: "10%" }}>
+//       <button
+//         type="button"
+//         className={`${styles.button} ${styles.buttonSmall}`}
+//         onClick={() => onRemoveItem(item)}
+//       >
+//         <Check height="18px" width="18px" />
+//       </button>
+//     </span>
+//   </li>
+// );
 
 export default App;
