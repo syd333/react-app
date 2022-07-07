@@ -59,12 +59,7 @@ const useStorageState = (
 ): [string, (newValue: string) => void] => {
   const [value, setValue] = useState(localStorage.getItem(key) || initialState);
   useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-    } else {
-      console.log("A");
-      localStorage.setItem(key, value);
-    }
+    localStorage.setItem(key, value);
   }, [value, key]);
   return [value, setValue];
 };
