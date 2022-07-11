@@ -5,11 +5,13 @@ import React, {
   useReducer,
   useCallback,
 } from "react";
+import { sortBy } from "lodash";
+import { ReactComponent as Check } from "./check.svg";
 import axios from "axios";
 import styles from "./App.module.css";
 import styled from "styled-components";
 import { SearchForm } from "./SearchForm";
-import { List } from "./List";
+// import { List } from "./List";
 
 const StyledContainer = styled.div`
   height: 100vw;
@@ -46,108 +48,18 @@ const StyledHeadlinePrimary = styled.h1`
 //   },
 // ];
 
-const API_ENDPOINT = "https://hn.algolia.com/api/v1/search?query=";
+const API_BASE = "https://hn.algolia.com/api/v1";
+const API_SEARCH = "/search";
+const PARAM_SEARCH = "query=";
+const PARAM_PAGE = "page=";
 
-// const getAsyncStories = () =>
-//   new Promise((resolve) =>
-//     setTimeout(() => resolve({ data: { stories: initialStories } }), 2000)
-//   );
+const getUrl = (searchTerm, page) =>
+  `${API_BASE}${API_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}`;
 
-//custom hooks
-const useStorageState = (
-  key: string,
-  initialState: string
-): [string, (newValue: string) => void] => {
-  const [value, setValue] = useState(localStorage.getItem(key) || initialState);
-  useEffect(() => {
-    localStorage.setItem(key, value);
-  }, [value, key]);
-  return [value, setValue];
-};
-
-type Story = {
-  objectID: string;
-  url: string;
-  title: string;
-  author: string;
-  num_comments: number;
-  points: number;
-};
-
-type Stories = Array<Story>;
-
-type StoriesState = {
-  data: Stories;
-  isLoading: boolean;
-  isError: boolean;
-};
-
-interface StoriesFetchInitAction {
-  type: "STORIES_FETCH_INIT";
-}
-
-interface StoriesFetchSuccessAction {
-  type: "STORIES_FETCH_SUCCESS";
-  payload: Stories;
-}
-
-interface StoriesFetchFailureAction {
-  type: "STORIES_FETCH_FAILURE";
-}
-
-interface StoriesRemoveAction {
-  type: "REMOVE_STORY";
-  payload: Story;
-}
-
-type StoriesAction =
-  | StoriesFetchInitAction
-  | StoriesFetchSuccessAction
-  | StoriesFetchFailureAction
-  | StoriesRemoveAction;
-
-const storiesReducer = (state: StoriesState, action: StoriesAction) => {
-  switch (action.type) {
-    case "STORIES_FETCH_INIT":
-      return {
-        ...state,
-        isLoading: true,
-        isError: false,
-      };
-    case "STORIES_FETCH_SUCCESS":
-      return {
-        ...state,
-        isLoading: false,
-        isError: false,
-        data: action.payload,
-      };
-    case "STORIES_FETCH_FAILURE":
-      return {
-        ...state,
-        isLoading: false,
-        isError: true,
-      };
-    case "REMOVE_STORY":
-      return {
-        ...state,
-        data: state.data.filter(
-          (story) => action.payload.objectID !== story.objectID
-        ),
-      };
-    default:
-      throw new Error();
-  }
-};
-
-const getSumComments = (stories) => {
-  console.log("C");
-
-  return stories.data.reduce((result, value) => result + value.num_comments, 0);
-};
-
-const extractSearchTerm = (url) => url.replace(API_ENDPOINT, "");
-
-const getUrl = (searchTerm) => `${API_ENDPOINT}${searchTerm}`;
+const extractSearchTerm = (url) =>
+  url
+    .substring(url.lastIndexOf("?") + 1, url.lastIndexOf("&"))
+    .replace(PARAM_SEARCH, "");
 
 const getLastSearches = (urls) =>
   urls
@@ -169,36 +81,79 @@ const getLastSearches = (urls) =>
     .slice(-6)
     .slice(0, -1);
 
-const App = () => {
-  const [searchTerm, setSearchTerm] = useStorageState("search", "React");
-  const [urls, setUrls] = React.useState([getUrl(searchTerm)]);
+const useSemiPersistentState = (key, initialState) => {
+  const [value, setValue] = useState(localStorage.getItem(key) || initialState);
 
-  // const [stories, setStories] = useState(initialStories);
+  useEffect(() => {
+    localStorage.setItem(key, value);
+  }, [value, key]);
+
+  return [value, setValue];
+};
+
+const storiesReducer = (state, action) => {
+  switch (action.type) {
+    case "STORIES_FETCH_INIT":
+      return {
+        ...state,
+        isLoading: true,
+        isError: false,
+      };
+    case "STORIES_FETCH_SUCCESS":
+      return {
+        ...state,
+        isLoading: false,
+        isError: false,
+        data:
+          action.payload.page === 0
+            ? action.payload.list
+            : state.data.concat(action.payload.list),
+        page: action.payload.page,
+      };
+    case "STORIES_FETCH_FAILURE":
+      return {
+        ...state,
+        isLoading: false,
+        isError: true,
+      };
+    case "REMOVE_STORY":
+      return {
+        ...state,
+        data: state.data.filter(
+          (story) => action.payload.objectID !== story.objectID
+        ),
+      };
+    default:
+      throw new Error();
+  }
+};
+
+const App = () => {
+  const [searchTerm, setSearchTerm] = useSemiPersistentState("search", "React");
+
+  const [urls, setUrls] = useState([getUrl(searchTerm, 0)]);
 
   const [stories, dispatchStories] = useReducer(storiesReducer, {
     data: [],
+    page: 0,
     isLoading: false,
     isError: false,
   });
 
-  // const [isLoading, setIsLoading] = useState(false);
-  // const [isError, setIsError] = useState(false);
-
   const handleFetchStories = useCallback(async () => {
-    // useEffect(() => {
-    // if (!searchTerm) return;
     dispatchStories({ type: "STORIES_FETCH_INIT" });
-    // getAsyncStories()
+
     try {
       const lastUrl = urls[urls.length - 1];
       const result = await axios.get(lastUrl);
-      // setStories(result.data.stories);
-      // setIsLoading(false);
+
       dispatchStories({
         type: "STORIES_FETCH_SUCCESS",
-        payload: result.data.hits,
+        payload: {
+          list: result.data.hits,
+          page: result.data.page,
+        },
       });
-      // setIsLoading(false);
     } catch {
       dispatchStories({ type: "STORIES_FETCH_FAILURE" });
     }
@@ -208,52 +163,46 @@ const App = () => {
     handleFetchStories();
   }, [handleFetchStories]);
 
-  const handleRemoveStory = useCallback((item) => {
-    // const newStories = stories.filter(
-    //   (story) => item.objectID !== story.objectID
-    // );
-    // setStories(newStories);
+  const handleRemoveStory = (item) => {
     dispatchStories({
       type: "REMOVE_STORY",
       payload: item,
     });
-  }, []);
-
-  const handleSearchInput = (e) => {
-    setSearchTerm(e.target.value);
   };
 
-  const handleSearchSubmit = (e) => {
-    handleSearch(searchTerm);
-
-    e.preventDefault();
+  const handleSearchInput = (event) => {
+    setSearchTerm(event.target.value);
   };
 
-  // console.log("B:App");
+  const handleSearchSubmit = (event) => {
+    handleSearch(searchTerm, 0);
+
+    event.preventDefault();
+  };
 
   const handleLastSearch = (searchTerm) => {
     setSearchTerm(searchTerm);
-    handleSearch(searchTerm);
+
+    handleSearch(searchTerm, 0);
   };
 
-  const handleSearch = (searchTerm) => {
-    const url = getUrl(searchTerm);
+  const handleMore = () => {
+    const lastUrl = urls[urls.length - 1];
+    const searchTerm = extractSearchTerm(lastUrl);
+    handleSearch(searchTerm, stories.page + 1);
+  };
+
+  const handleSearch = (searchTerm, page) => {
+    const url = getUrl(searchTerm, page);
     setUrls(urls.concat(url));
   };
 
-    const lastSearches = getLastSearches(urls);
-
-  const sumComments = React.useMemo(() => getSumComments(stories), [stories]);
-
-  // const searchedStories = stories.data.filter((story) =>
-  //   story.title.toLowerCase().includes(searchTerm.toLowerCase())
-  // );
+  const lastSearches = getLastSearches(urls);
 
   return (
     <StyledContainer>
-      <StyledHeadlinePrimary>
-        Hacker Stories with {sumComments} comments.
-      </StyledHeadlinePrimary>
+      <StyledHeadlinePrimary>Hacker Stories</StyledHeadlinePrimary>
+
       <SearchForm
         searchTerm={searchTerm}
         onSearchInput={handleSearchInput}
@@ -265,27 +214,18 @@ const App = () => {
         onLastSearch={handleLastSearch}
       />
 
-      {/* moved to separate component */}
-      {/* <form onSubmit={handleSearchSubmit}>
-        <InputWithLabel
-          id="search"
-          value={searchTerm}
-          isFocused
-          onInputChange={handleSearchInput}
-        >
-          <strong>Search:</strong>
-        </InputWithLabel>
-
-        <button type="submit" disabled={!searchTerm}>
-          Submit
-        </button> 
-      </form> */}
       <hr />
-      {stories.isError && <p> Something went wrong ... </p>}
+
+      {stories.isError && <p>Something went wrong ...</p>}
+
+      <List list={stories.data} onRemoveItem={handleRemoveStory} />
+
       {stories.isLoading ? (
-        <p>Loading...</p>
+        <p>Loading ...</p>
       ) : (
-        <List list={stories.data} onRemoveItem={handleRemoveStory} />
+        <button type="button" onClick={handleMore}>
+          More
+        </button>
       )}
     </StyledContainer>
   );
@@ -303,6 +243,80 @@ const LastSearches = ({ lastSearches, onLastSearch }) => (
       </button>
     ))}
   </>
+);
+
+const SORTS = {
+  NONE: (list) => list,
+  TITLE: (list) => sortBy(list, "title"),
+  AUTHOR: (list) => sortBy(list, "author"),
+  COMMENT: (list) => sortBy(list, "num_comments").reverse(),
+  POINT: (list) => sortBy(list, "points").reverse(),
+};
+
+const List = ({ list, onRemoveItem }) => {
+  const [sort, setSort] = React.useState({
+    sortKey: "NONE",
+    isReverse: false,
+  });
+
+  const handleSort = (sortKey) => {
+    const isReverse = sort.sortKey === sortKey && !sort.isReverse;
+
+    setSort({ sortKey, isReverse });
+  };
+
+  const sortFunction = SORTS[sort.sortKey];
+  const sortedList = sort.isReverse
+    ? sortFunction(list).reverse()
+    : sortFunction(list);
+
+  return (
+    <ul>
+      <li style={{ display: "flex" }}>
+        <span style={{ width: "40%" }}>
+          <button type="button" onClick={() => handleSort("TITLE")}>
+            Title
+          </button>
+        </span>
+        <span style={{ width: "30%" }}>
+          <button type="button" onClick={() => handleSort("AUTHOR")}>
+            Author
+          </button>
+        </span>
+        <span style={{ width: "10%" }}>
+          <button type="button" onClick={() => handleSort("COMMENT")}>
+            Comments
+          </button>
+        </span>
+        <span style={{ width: "10%" }}>
+          <button type="button" onClick={() => handleSort("POINT")}>
+            Points
+          </button>
+        </span>
+        <span style={{ width: "10%" }}>Actions</span>
+      </li>
+
+      {sortedList.map((item) => (
+        <Item key={item.objectID} item={item} onRemoveItem={onRemoveItem} />
+      ))}
+    </ul>
+  );
+};
+
+const Item = ({ item, onRemoveItem }) => (
+  <li style={{ display: "flex" }}>
+    <span style={{ width: "40%" }}>
+      <a href={item.url}>{item.title}</a>
+    </span>
+    <span style={{ width: "30%" }}>{item.author}</span>
+    <span style={{ width: "10%" }}>{item.num_comments}</span>
+    <span style={{ width: "10%" }}>{item.points}</span>
+    <span style={{ width: "10%" }}>
+      <button type="button" onClick={() => onRemoveItem(item)}>
+        Dismiss
+      </button>
+    </span>
+  </li>
 );
 
 export default App;
