@@ -145,9 +145,33 @@ const getSumComments = (stories) => {
   return stories.data.reduce((result, value) => result + value.num_comments, 0);
 };
 
+const extractSearchTerm = (url) => url.replace(API_ENDPOINT, "");
+
+const getUrl = (searchTerm) => `${API_ENDPOINT}${searchTerm}`;
+
+const getLastSearches = (urls) =>
+  urls
+    .reduce((result, url, index) => {
+      const searchTerm = extractSearchTerm(url);
+
+      if (index === 0) {
+        return result.concat(searchTerm);
+      }
+
+      const previousSearchTerm = result[result.length - 1];
+
+      if (searchTerm === previousSearchTerm) {
+        return result;
+      } else {
+        return result.concat(searchTerm);
+      }
+    }, [])
+    .slice(-6)
+    .slice(0, -1);
+
 const App = () => {
   const [searchTerm, setSearchTerm] = useStorageState("search", "React");
-  const [url, setUrl] = useState(`${API_ENDPOINT}${searchTerm}`);
+  const [urls, setUrls] = React.useState([getUrl(searchTerm)]);
 
   // const [stories, setStories] = useState(initialStories);
 
@@ -166,7 +190,8 @@ const App = () => {
     dispatchStories({ type: "STORIES_FETCH_INIT" });
     // getAsyncStories()
     try {
-      const result = await axios.get(url);
+      const lastUrl = urls[urls.length - 1];
+      const result = await axios.get(lastUrl);
       // setStories(result.data.stories);
       // setIsLoading(false);
       dispatchStories({
@@ -177,7 +202,7 @@ const App = () => {
     } catch {
       dispatchStories({ type: "STORIES_FETCH_FAILURE" });
     }
-  }, [url]);
+  }, [urls]);
 
   useEffect(() => {
     handleFetchStories();
@@ -199,11 +224,24 @@ const App = () => {
   };
 
   const handleSearchSubmit = (e) => {
-    setUrl(`${API_ENDPOINT}${searchTerm}`);
+    handleSearch(searchTerm);
+
     e.preventDefault();
   };
 
-  console.log("B:App");
+  // console.log("B:App");
+
+  const handleLastSearch = (searchTerm) => {
+    setSearchTerm(searchTerm);
+    handleSearch(searchTerm);
+  };
+
+  const handleSearch = (searchTerm) => {
+    const url = getUrl(searchTerm);
+    setUrls(urls.concat(url));
+  };
+
+    const lastSearches = getLastSearches(urls);
 
   const sumComments = React.useMemo(() => getSumComments(stories), [stories]);
 
@@ -221,6 +259,12 @@ const App = () => {
         onSearchInput={handleSearchInput}
         onSearchSubmit={handleSearchSubmit}
       />
+
+      <LastSearches
+        lastSearches={lastSearches}
+        onLastSearch={handleLastSearch}
+      />
+
       {/* moved to separate component */}
       {/* <form onSubmit={handleSearchSubmit}>
         <InputWithLabel
@@ -247,8 +291,18 @@ const App = () => {
   );
 };
 
-
-
-
+const LastSearches = ({ lastSearches, onLastSearch }) => (
+  <>
+    {lastSearches.map((searchTerm, index) => (
+      <button
+        key={searchTerm + index}
+        type="button"
+        onClick={() => onLastSearch(searchTerm)}
+      >
+        {searchTerm}
+      </button>
+    ))}
+  </>
+);
 
 export default App;
